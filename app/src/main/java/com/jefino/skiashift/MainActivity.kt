@@ -179,7 +179,43 @@ fun MainScreen() {
         }
     }
 
+    val exportLogLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        uri?.let {
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    val p = Runtime.getRuntime().exec(arrayOf("su", "-c", "logcat -d -v threadtime"))
+                    val reader = p.inputStream.bufferedReader()
+                    val stringBuilder = java.lang.StringBuilder()
+                    reader.forEachLine { line ->
+                        if (line.contains("SkiaShift", ignoreCase = true) || 
+                            line.contains("HWUI", ignoreCase = true) || 
+                            line.contains("RenderThread", ignoreCase = true)) {
+                            stringBuilder.append(line).append("\n")
+                        }
+                    }
+                    p.waitFor()
+                    val logs = stringBuilder.toString()
+
+                    context.contentResolver.openOutputStream(it)?.use { out ->
+                        out.write(logs.toByteArray())
+                    }
+                    launch(Dispatchers.Main) { snackbarHostState.showSnackbar("Logs Exported Successfully", withDismissAction = true) }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    launch(Dispatchers.Main) { snackbarHostState.showSnackbar("Error exporting logs", withDismissAction = true) }
+                }
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                Runtime.getRuntime().exec(arrayOf("su", "-c", "id")).waitFor()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
         apps = AppManager.getInstalledApps(context)
         isLoading = false
     }
@@ -276,6 +312,18 @@ fun MainScreen() {
                             colors = ButtonDefaults.buttonColorsPrimary()
                         ) {
                             Text("Import", color = Color.White)
+                        }
+                    }
+
+                    if (BuildConfig.DEBUG) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), horizontalArrangement = Arrangement.Center) {
+                            Button(
+                                onClick = { exportLogLauncher.launch("skiashift_debug.log") },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColorsPrimary()
+                            ) {
+                                Text("Export Debug Logs", color = Color.White)
+                            }
                         }
                     }
                 }
