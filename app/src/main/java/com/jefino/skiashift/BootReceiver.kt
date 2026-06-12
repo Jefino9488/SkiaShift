@@ -16,11 +16,12 @@ class BootReceiver : BroadcastReceiver() {
                 try {
                     val isVk = globalRenderer == "skiavk"
                     val setProps = """
-                        setprop debug.hwui.renderer $globalRenderer
-                        setprop debug.renderengine.backend ${if (isVk) "skiavkthreaded" else "skiaglthreaded"}
-                        setprop debug.hwui.use_buffer_age ${if (isVk) "true" else "false"}
-                        setprop debug.hwui.skia_use_perf_hint true
-                        ${if (isVk) "setprop renderthread.skia.reduceopstasksplitting true" else ""}
+                        resetprop -n debug.hwui.renderer $globalRenderer
+                        resetprop -n debug.renderengine.backend ${if (isVk) "skiavkthreaded" else "skiaglthreaded"}
+                        resetprop -n debug.hwui.use_buffer_age ${if (isVk) "true" else "false"}
+                        resetprop -n debug.hwui.skia_use_perf_hint true
+                        resetprop -n ro.hwui.use_vulkan ${if (isVk) "true" else "false"}
+                        ${if (isVk) "resetprop -n renderthread.skia.reduceopstasksplitting true" else "resetprop -n --delete renderthread.skia.reduceopstasksplitting"}
                     """.trimIndent()
                     
                     val cacheScript = java.io.File(context.cacheDir, "apply_props.sh")
