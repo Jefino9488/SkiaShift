@@ -355,14 +355,34 @@ fun MainScreen() {
             
             Spacer(modifier = Modifier.height(8.dp))
 
+            var searchQuery by remember { mutableStateOf("") }
+            SearchBar(
+                inputField = {
+                    InputField(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onSearch = { },
+                        expanded = false,
+                        onExpandedChange = { },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                expanded = false,
+                onExpandedChange = { },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            ) {}
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // App List
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else {
-                val filteredApps = remember(apps, selectedTab) {
+                val filteredApps = remember(apps, selectedTab, searchQuery) {
                     apps.filter { if (selectedTab == 0) !it.isSystemApp else it.isSystemApp }
+                        .filter { it.name.contains(searchQuery, ignoreCase = true) || it.packageName.contains(searchQuery, ignoreCase = true) }
                         .sortedWith(compareByDescending<AppInfo> { prefs.contains(it.packageName) }.thenBy { it.name.lowercase() })
                 }
                 LazyColumn(
