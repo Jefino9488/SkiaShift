@@ -136,6 +136,9 @@ fun MainScreen() {
     var isLoading by remember { mutableStateOf(true) }
     var globalRenderer by remember { mutableStateOf(prefs.getString(SkiaShiftProvider.KEY_GLOBAL_RENDERER, "skiavk") ?: "skiavk") }
 
+    var hasRoot by remember { mutableStateOf(true) }
+    var showLsposedWarning by remember { mutableStateOf(true) }
+
     val tabs = listOf("User Apps", "System Apps")
     var selectedTab by remember { mutableStateOf(0) }
 
@@ -212,9 +215,11 @@ fun MainScreen() {
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "id")).waitFor()
+                val p = Runtime.getRuntime().exec(arrayOf("su", "-c", "id"))
+                hasRoot = p.waitFor() == 0
             } catch (e: Exception) {
                 e.printStackTrace()
+                hasRoot = false
             }
         }
         apps = AppManager.getInstalledApps(context)
@@ -331,16 +336,44 @@ fun MainScreen() {
             }
 
             // Warning
-            Card(
-                modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                colors = CardDefaults.defaultColors(color = Color(0xFFFFF3CD))
-            ) {
-                Text(
-                    text = "Ensure all desired apps are checked in your LSPosed Manager module scope for these settings to take effect.",
-                    modifier = Modifier.padding(12.dp),
-                    color = Color(0xFF856404),
-                    fontSize = 12.sp
-                )
+            if (!hasRoot) {
+                Card(
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(color = Color(0xFFF8D7DA))
+                ) {
+                    Text(
+                        text = "Root Permission Missing. Please grant root access for SkiaShift to apply configuration.",
+                        modifier = Modifier.padding(12.dp),
+                        color = Color(0xFF721C24),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            } else if (showLsposedWarning) {
+                Card(
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(color = Color(0xFFFFF3CD))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Ensure all desired apps are checked in your LSPosed Manager module scope for these settings to take effect.",
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFF856404),
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = "✕",
+                            modifier = Modifier.padding(start = 8.dp).clickable { showLsposedWarning = false },
+                            color = Color(0xFF856404),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
