@@ -359,12 +359,13 @@ fun MainScreen() {
             SearchBar(
                 inputField = {
                     InputField(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it },
-                        onSearch = { },
-                        expanded = false,
-                        onExpandedChange = { },
-                        modifier = Modifier.fillMaxWidth()
+                        searchQuery,
+                        { searchQuery = it },
+                        { },
+                        false,
+                        { },
+                        Modifier.fillMaxWidth(),
+                        "Search apps"
                     )
                 },
                 expanded = false,
