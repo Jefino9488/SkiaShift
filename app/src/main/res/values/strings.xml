@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SkiaShift</string>
+    <string name="app_description">Overrides debug.hwui.renderer globally or per-app</string>
 </resources>
