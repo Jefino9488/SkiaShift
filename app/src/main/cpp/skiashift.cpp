@@ -65,6 +65,32 @@ static int my_property_get(const char *key, char *value, const char *default_val
     return orig_property_get ? orig_property_get(key, value, default_value) : 0;
 }
 
+// property_get_bool hook
+typedef int8_t (*property_get_bool_fn)(const char *key, int8_t default_value);
+static property_get_bool_fn orig_property_get_bool = nullptr;
+
+static int8_t my_property_get_bool(const char *key, int8_t default_value) {
+    const char* override_val = get_override_value(key);
+    if (override_val) {
+        LOGI("Intercepted property_get_bool for %s -> %s", key, override_val);
+        return (strcmp(override_val, "true") == 0 || strcmp(override_val, "1") == 0) ? 1 : 0;
+    }
+    return orig_property_get_bool ? orig_property_get_bool(key, default_value) : default_value;
+}
+
+// android::base::GetBoolProperty hook
+typedef bool (*GetBoolProperty_fn)(const std::string& key, bool default_value);
+static GetBoolProperty_fn orig_GetBoolProperty = nullptr;
+
+static bool my_GetBoolProperty(const std::string& key, bool default_value) {
+    const char* override_val = get_override_value(key.c_str());
+    if (override_val) {
+        LOGI("Intercepted android::base::GetBoolProperty for %s -> %s", key.c_str(), override_val);
+        return (strcmp(override_val, "true") == 0 || strcmp(override_val, "1") == 0);
+    }
+    return orig_GetBoolProperty ? orig_GetBoolProperty(key, default_value) : default_value;
+}
+
 typedef const void* (*__system_property_find_fn)(const char* name);
 static __system_property_find_fn orig_system_property_find = nullptr;
 
@@ -143,6 +169,24 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
             reinterpret_cast<void *>(my_property_get),
             nullptr,
             reinterpret_cast<void **>(&orig_property_get)
+    );
+
+    // Hook property_get_bool using ByteHook
+    bytehook_hook_all(
+            nullptr,
+            "property_get_bool",
+            reinterpret_cast<void *>(my_property_get_bool),
+            nullptr,
+            reinterpret_cast<void **>(&orig_property_get_bool)
+    );
+
+    // Hook android::base::GetBoolProperty using ByteHook
+    bytehook_hook_all(
+            nullptr,
+            "_ZN7android4base15GetBoolPropertyERKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEEb",
+            reinterpret_cast<void *>(my_GetBoolProperty),
+            nullptr,
+            reinterpret_cast<void **>(&orig_GetBoolProperty)
     );
 
     // Hook __system_property_get using ByteHook
