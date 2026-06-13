@@ -36,7 +36,8 @@ static std::string my_GetProperty(const std::string& key, const std::string& def
         LOGI("Intercepted android::base::GetProperty for %s -> %s", key.c_str(), override_val);
         return std::string(override_val);
     }
-    return orig_GetProperty ? orig_GetProperty(key, default_value) : default_value;
+    auto prev_func = (decltype(&my_GetProperty))bytehook_get_prev_func(reinterpret_cast<void*>(my_GetProperty));
+    return prev_func ? prev_func(key, default_value) : default_value;
 }
 
 typedef int (*__system_property_get_fn)(const char *name, char *value);
@@ -49,7 +50,10 @@ static int my_system_property_get(const char *name, char *value) {
         strcpy(value, override_val);
         return strlen(override_val);
     }
-    return orig_system_property_get ? orig_system_property_get(name, value) : 0;
+    auto prev_func = (decltype(&my_system_property_get))bytehook_get_prev_func(reinterpret_cast<void*>(my_system_property_get));
+    if (prev_func) return prev_func(name, value);
+    if (value) value[0] = '\0';
+    return 0;
 }
 
 typedef int (*property_get_fn)(const char *key, char *value, const char *default_value);
@@ -62,7 +66,14 @@ static int my_property_get(const char *key, char *value, const char *default_val
         strcpy(value, override_val);
         return strlen(override_val);
     }
-    return orig_property_get ? orig_property_get(key, value, default_value) : 0;
+    auto prev_func = (decltype(&my_property_get))bytehook_get_prev_func(reinterpret_cast<void*>(my_property_get));
+    if (prev_func) return prev_func(key, value, default_value);
+    if (value && default_value) {
+        strcpy(value, default_value);
+        return strlen(default_value);
+    }
+    if (value) value[0] = '\0';
+    return 0;
 }
 
 // property_get_bool hook
@@ -75,7 +86,8 @@ static int8_t my_property_get_bool(const char *key, int8_t default_value) {
         LOGI("Intercepted property_get_bool for %s -> %s", key, override_val);
         return (strcmp(override_val, "true") == 0 || strcmp(override_val, "1") == 0) ? 1 : 0;
     }
-    return orig_property_get_bool ? orig_property_get_bool(key, default_value) : default_value;
+    auto prev_func = (decltype(&my_property_get_bool))bytehook_get_prev_func(reinterpret_cast<void*>(my_property_get_bool));
+    return prev_func ? prev_func(key, default_value) : default_value;
 }
 
 // android::base::GetBoolProperty hook
@@ -88,7 +100,8 @@ static bool my_GetBoolProperty(const std::string& key, bool default_value) {
         LOGI("Intercepted android::base::GetBoolProperty for %s -> %s", key.c_str(), override_val);
         return (strcmp(override_val, "true") == 0 || strcmp(override_val, "1") == 0);
     }
-    return orig_GetBoolProperty ? orig_GetBoolProperty(key, default_value) : default_value;
+    auto prev_func = (decltype(&my_GetBoolProperty))bytehook_get_prev_func(reinterpret_cast<void*>(my_GetBoolProperty));
+    return prev_func ? prev_func(key, default_value) : default_value;
 }
 
 typedef const void* (*__system_property_find_fn)(const char* name);
