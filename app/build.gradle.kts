@@ -11,8 +11,8 @@ android {
         applicationId = "com.jefino.skiashift"
         minSdk = 33
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.0.3"
 
         ndk {
             abiFilters.add("armeabi-v7a")

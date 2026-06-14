@@ -64,7 +64,7 @@ private fun exportConfig(context: Context) {
             val cacheScript = java.io.File(context.cacheDir, "apply_props.sh")
             cacheScript.writeText(setProps)
             
-            val cmd = "cp ${cacheFile.absolutePath} /data/local/tmp/skiashift_config.json && chmod 0644 /data/local/tmp/skiashift_config.json && sh ${cacheScript.absolutePath}"
+            val cmd = "cp ${cacheFile.absolutePath} /data/local/tmp/skiashift_config.json && chmod 0644 /data/local/tmp/skiashift_config.json && cp ${cacheScript.absolutePath} /data/adb/post-fs-data.d/skiashift_props.sh && chmod 0755 /data/adb/post-fs-data.d/skiashift_props.sh && sh /data/adb/post-fs-data.d/skiashift_props.sh"
             
             val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
             p.waitFor()
@@ -360,7 +360,7 @@ fun MainScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Ensure all desired apps are checked in your LSPosed Manager module scope for these settings to take effect.",
+                            text = "Global renderer is applied natively to the whole system on boot. Use LSPosed to check apps you want to force onto a different renderer.",
                             modifier = Modifier.weight(1f),
                             color = Color(0xFF856404),
                             fontSize = 12.sp
