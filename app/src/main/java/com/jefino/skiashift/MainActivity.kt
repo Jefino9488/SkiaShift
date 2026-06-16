@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.*
@@ -37,7 +37,7 @@ import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
 
 private fun exportConfig(context: Context) {
-    GlobalScope.launch(Dispatchers.IO) {
+    CoroutineScope(Dispatchers.IO).launch {
         try {
             val prefs = context.getSharedPreferences(SkiaShiftProvider.PREFS_NAME, Context.MODE_PRIVATE)
             val json = org.json.JSONObject()
@@ -79,7 +79,7 @@ private fun exportConfig(context: Context) {
 }
 
 fun importConfig(context: Context) {
-    GlobalScope.launch(Dispatchers.IO) {
+    CoroutineScope(Dispatchers.IO).launch {
         try {
             val cmd = "cat /data/local/tmp/skiashift_config.json"
             val p = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
